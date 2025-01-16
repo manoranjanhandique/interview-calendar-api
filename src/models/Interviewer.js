@@ -18,6 +18,7 @@ const interviewerSchema= new mongoose.Schema({
     bookedSlots: [
         {
             candidate: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' },
+            day: { type: String },
             startTime: {
                 type: Date,
             },

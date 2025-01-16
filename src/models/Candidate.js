@@ -23,9 +23,10 @@ const candidateSchema = new mongoose.Schema(
         },
         startTime: { type: Date, required: true },
         endTime: { type: Date, required: true },
+        isAssigned: { type: Boolean, default: false },
       },
     ],
-    bookedSlot: {
+    bookedSlot: [{
       interviewer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Interviewer",
@@ -34,6 +35,7 @@ const candidateSchema = new mongoose.Schema(
       startTime: Date,
       endTime: Date,
     },
+    ],
   },
   {
     timestamps: true,
