@@ -1,3 +1,4 @@
+require('dotenv').config(); 
 const connectDB = require("./src/config/dbConnect");
 const { handleErrors }=require("./src/middlewares/globalErrorHandler")
 const app = require("./src/app");

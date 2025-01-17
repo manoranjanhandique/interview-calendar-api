@@ -1,9 +1,10 @@
 const express=require('express');
-const { interviewer, availability, assignInterviewerToCandidate } = require('../controllers/interviewer');
+const { interviewer, getInterviewerAvailability , assignInterviewerToCandidate, getBookedSlots } = require('../controllers/interviewer');
 const router=express.Router();
 
 router.post('/interviewers',interviewer);
-router.get('/interviewers/availability',availability)
+router.get('/interviewers/availability/:id?',getInterviewerAvailability ) //recheck***!
 router.post('/assign-interviewer',assignInterviewerToCandidate);
+router.get('/interview/booked-slots/:id?', getBookedSlots)
 
 module.exports=router;
