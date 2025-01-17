@@ -24,21 +24,95 @@ const interviewer = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-const availability = async (req, res) => {
+const getInterviewerAvailability  = async (req, res) => {
+  const { id } = req.params;
   try {
-    const availableInterviewer = await Interviewer.find();
-    for (let interviewer of availableInterviewer) {
-      const availableSlots = await generateInterviewerSlots(interviewer._id);
-      // const hourlySlots = generateHourlySlots(
-      //   interviewer.startTime,
-      //   interviewer.endTime
-      // );
-      res.json(availableSlots);
-      // console.log(name)
+    const query = id ? { _id: id } : {}; // If ID is provided, query specific interviewer
+    const interviewers = await Interviewer.find(query);
+
+    if (id && interviewers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Interviewer not found.",
+      });
     }
-    res.json("availableInterviewer");
+
+    const response = interviewers.map((interviewer) => {
+      const slot = interviewer.availability.map((availableSlot) => {
+        const { day, startTime, endTime } = availableSlot;
+
+        // Generate free slots (1-hour intervals)
+        const freeSlots = [];
+        let currentTime = new Date(startTime);
+        const endTimeLimit = new Date(endTime);
+
+        // Collect booked slots for the day
+        const bookedSlots = interviewer.bookedSlots
+          .filter((bookedSlot) => bookedSlot.day === day)
+          .map((bookedSlot) => {
+            return {
+              start: new Date(bookedSlot.startTime),
+              end: new Date(bookedSlot.endTime),
+            };
+          });
+
+        // Check each hour against booked slots and add only available hours to freeSlots
+        while (currentTime < endTimeLimit) {
+          const nextHour = new Date(currentTime);
+          nextHour.setHours(currentTime.getHours() + 1);
+
+          const isBooked = bookedSlots.some(
+            (booked) =>
+              booked.start < nextHour && booked.end > currentTime // Check for overlap
+          );
+
+          if (!isBooked) {
+            freeSlots.push(
+              `${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })} - ${nextHour.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`
+            );
+          }
+
+          currentTime = nextHour;
+        }
+
+        // Format booked slots as readable strings
+        const bookedSlotsFormatted = bookedSlots.map((booked) => {
+          return `${booked.start.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })} - ${booked.end.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })}`;
+        });
+
+        return {
+          day,
+          freeSlots,
+          bookedSlots: bookedSlotsFormatted,
+        };
+      });
+
+      return {
+        interviewer: interviewer.name,
+        slot,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+    
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching interviewer availability.",
+      error: error.message,
+    });
   }
 };
 
@@ -153,4 +227,57 @@ const assignInterviewerToCandidate = async (req, res) => {
   }
 };
 
-module.exports = { interviewer, availability, assignInterviewerToCandidate };
+const getBookedSlots=async (req,res)=>{
+  const { id } = req.params;
+  try {
+    let interviewers;
+    if (id) {
+      // Find a specific interviewer by ID
+      interviewers = await Interviewer.findById(id).populate('bookedSlots.candidate', 'name');
+      if (!interviewers) {
+        return res.status(404).json({
+          success: false,
+          message: "Interviewer not found.",
+        });
+      }
+      interviewers = [interviewers]; // Wrap in an array for consistent processing
+    } else {
+      // Fetch all interviewers and populate candidate names
+      interviewers = await Interviewer.find({}).populate('bookedSlots.candidate', 'name');
+    }
+
+    const response = interviewers.map((interviewer) => ({
+      interviewer: interviewer.name,
+      bookedSlots: interviewer.bookedSlots.map((slot) => ({
+        candidate: slot.candidate ? slot.candidate.name : "Unknown",
+        day: slot.day,
+        startTime: new Date(slot.startTime).toLocaleString('en-US', {
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true,
+        }),
+        endTime: new Date(slot.endTime).toLocaleString('en-US', {
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true,
+        }),
+      })),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching booked slots.",
+      error: error.message,
+    });
+    
+  }
+}
+
+module.exports = { interviewer, getInterviewerAvailability , assignInterviewerToCandidate, getBookedSlots };

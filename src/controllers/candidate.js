@@ -78,6 +78,99 @@ const getCandidateRequestSlotsList=async (req,res)=>{
   }
 
 }
+
+const getPendingSlots= async (req,res)=>{
+  const { id } = req.params;
+
+  try {
+    let candidates;
+    if (id) {
+      // Fetch specific candidate by ID
+      candidates = await Candidate.findById(id).populate('bookedSlot.interviewer', 'name');
+      if (!candidates) {
+        return res.status(404).json({
+          success: false,
+          message: "Candidate not found.",
+        });
+      }
+      candidates = [candidates]; // Wrap in an array for consistent processing
+    } else {
+      // Fetch all candidates
+      candidates = await Candidate.find({});
+    }
+
+    // Fetch all interviewers
+    const interviewers = await Interviewer.find({});
+
+    const response = candidates
+      .map((candidate) => {
+        const pendingSlots = candidate.requestedSlots
+          .filter((slot) => !slot.isAssigned) // Only unassigned slots
+          .map((slot) => {
+            const { day, startTime, endTime } = slot;
+
+            // Find available interviewers for this slot
+            const availableInterviewerNames = interviewers
+              .filter((interviewer) => {
+                // Check if interviewer has availability on the requested day and time
+                const isAvailable = interviewer.availability.some((availableSlot) => {
+                  return (
+                    availableSlot.day === day &&
+                    new Date(availableSlot.startTime).getHours() <= new Date(startTime).getHours() &&
+                    new Date(availableSlot.endTime).getHours() >= new Date(endTime).getHours()
+                  );
+                });
+
+                // Check if the interviewer is not booked during the requested slot
+                const isNotBooked = interviewer.bookedSlots.every((booked) => {
+                  return (
+                    new Date(booked.endTime) <= new Date(startTime) ||
+                    new Date(booked.startTime) >= new Date(endTime)
+                  );
+                });
+
+                return isAvailable && isNotBooked;
+              })
+              .map((interviewer) => interviewer.name);
+
+            return {
+              day,
+              startTime: new Date(startTime).toLocaleString("en-US", {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+              }),
+              endTime: new Date(endTime).toLocaleString("en-US", {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+              }),
+              availableInterviewer: availableInterviewerNames,
+            };
+          });
+
+        return {
+          candidate: candidate.name,
+          pendingSlots,
+        };
+      })
+      .filter((entry) => entry.pendingSlots.length > 0); // Skip candidates with no pending slots
+
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching pending slots.",
+      error: error.message,
+    });
+  }
+
+}
 const candidate = async (req, res) => {
   try {
     const { name, requestedSlots } = req.body;
@@ -179,4 +272,4 @@ const candidate = async (req, res) => {
   }
 };
 
-module.exports = { candidate, candidateRequestedSlot, getCandidateRequestSlotsList };
+module.exports = { candidate, candidateRequestedSlot, getCandidateRequestSlotsList, getPendingSlots };
