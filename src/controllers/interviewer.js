@@ -1,11 +1,18 @@
 const Candidate = require("../models/Candidate");
 const Interviewer = require("../models/Interviewer");
-const {
-  generateInterviewerSlots,
-} = require("../utils/generateInterviewerSlots");
+const {generateInterviewerSlots} = require("../utils/generateInterviewerSlots");
 const { formatTimeWithAmPm } = require("../utils/dateTimeFormate");
+const { validateInterviewerAvailability } = require("../utils/validateCandidateRequest");
 
 const interviewer = async (req, res) => {
+  const validationResult = validateInterviewerAvailability(req.body);
+
+  if (!validationResult.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: validationResult.message,
+    });
+  }
   const { name, availability } = req.body;
   try {
     const newInterviewer = new Interviewer({
@@ -24,6 +31,7 @@ const interviewer = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const availability = async (req, res) => {
   try {
     const availableInterviewer = await Interviewer.find();
@@ -44,6 +52,12 @@ const availability = async (req, res) => {
 
 const assignInterviewerToCandidate = async (req, res) => {
   const { candidateId, interviewerId } = req.body;
+  if(!candidateId || !interviewerId){
+    return res.status(404).json({
+      success: false,
+      message: "Please provide candidateId or interviewerId!",
+    });
+  }
   try {
     const candidate = await Candidate.findById(candidateId);
     if (!candidate) {
