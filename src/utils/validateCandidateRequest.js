@@ -1,7 +1,6 @@
 const validateCandidateRequest=(body)=>{
     const { name, requestedSlots } = body;
 
-  // Validate `name`
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return {
       isValid: false,
@@ -9,7 +8,6 @@ const validateCandidateRequest=(body)=>{
     };
   }
 
-  // Validate `requestedSlots`
   if (!Array.isArray(requestedSlots) || requestedSlots.length === 0) {
     return {
       isValid: false,
@@ -17,11 +15,9 @@ const validateCandidateRequest=(body)=>{
     };
   }
 
-  // Validate each slot in `requestedSlots`
   for (const slot of requestedSlots) {
     const { day, startTime, endTime } = slot;
 
-    // Validate `day`
     if (
       !day ||
       typeof day !== "string" ||
@@ -33,7 +29,6 @@ const validateCandidateRequest=(body)=>{
       };
     }
 
-    // Validate `startTime` and `endTime`
     if (!startTime || !endTime || isNaN(new Date(startTime)) || isNaN(new Date(endTime))) {
       return {
         isValid: false,
@@ -41,7 +36,6 @@ const validateCandidateRequest=(body)=>{
       };
     }
 
-    // Ensure `startTime` is before `endTime`
     if (new Date(startTime) >= new Date(endTime)) {
       return {
         isValid: false,
@@ -50,7 +44,6 @@ const validateCandidateRequest=(body)=>{
     }
   }
 
-  // If all validations pass
   return {
     isValid: true,
     message: "Validation successful.",
@@ -61,7 +54,6 @@ const validateCandidateRequest=(body)=>{
 const validateInterviewerAvailability = (body) => {
     const { name, availability } = body;
   
-    // Validate `name`
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return {
         isValid: false,
@@ -69,7 +61,6 @@ const validateInterviewerAvailability = (body) => {
       };
     }
   
-    // Validate `availability`
     if (!Array.isArray(availability) || availability.length === 0) {
       return {
         isValid: false,
@@ -77,11 +68,9 @@ const validateInterviewerAvailability = (body) => {
       };
     }
   
-    // Validate each availability slot
     for (const slot of availability) {
       const { day, startTime, endTime } = slot;
   
-      // Validate `day`
       if (
         !day ||
         typeof day !== "string" ||
@@ -93,7 +82,6 @@ const validateInterviewerAvailability = (body) => {
         };
       }
   
-      // Validate `startTime` and `endTime`
       if (!startTime || !endTime || isNaN(new Date(startTime)) || isNaN(new Date(endTime))) {
         return {
           isValid: false,
@@ -101,7 +89,6 @@ const validateInterviewerAvailability = (body) => {
         };
       }
   
-      // Ensure `startTime` is before `endTime`
       if (new Date(startTime) >= new Date(endTime)) {
         return {
           isValid: false,
@@ -110,7 +97,6 @@ const validateInterviewerAvailability = (body) => {
       }
     }
   
-    // If all validations pass
     return {
       isValid: true,
       message: "Validation successful.",

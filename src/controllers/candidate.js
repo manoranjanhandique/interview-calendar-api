@@ -16,7 +16,6 @@ const candidateRequestedSlot=async (req,res)=>{
     });
   }
   try {
-    //validate slot
     const { name, requestedSlots } = req.body;
     const isValid = validateCandidateSlot(requestedSlots);
     if (!isValid) {
@@ -29,7 +28,6 @@ const candidateRequestedSlot=async (req,res)=>{
       const existingCandidateBooking = await Candidate.findOne({
         name,
       });
-      //check from db time
       if (existingCandidateBooking) {
         const day=existingCandidateBooking.requestedSlots[0].day
         const start = new Date(existingCandidateBooking.requestedSlots[0].startTime);
@@ -61,7 +59,7 @@ const candidateRequestedSlot=async (req,res)=>{
 const getCandidateRequestSlotsList=async (req,res)=>{
   try {
     const candidates = await Candidate.find({ 
-      requestedSlots: { $exists: true, $not: { $size: 0 } } // Ensure candidates have requested slots
+      requestedSlots: { $exists: true, $not: { $size: 0 } } 
   });
 
   if (!candidates || candidates.length === 0) {
@@ -94,7 +92,6 @@ const getPendingSlots= async (req,res)=>{
   try {
     let candidates;
     if (id) {
-      // Fetch specific candidate by ID
       candidates = await Candidate.findById(id).populate('bookedSlot.interviewer', 'name');
       if (!candidates) {
         return res.status(404).json({
@@ -102,23 +99,19 @@ const getPendingSlots= async (req,res)=>{
           message: "Candidate not found.",
         });
       }
-      candidates = [candidates]; // Wrap in an array for consistent processing
+      candidates = [candidates]; 
     } else {
-      // Fetch all candidates
       candidates = await Candidate.find({});
     }
 
-    // Fetch all interviewers
     const interviewers = await Interviewer.find({});
 
     const response = candidates
       .map((candidate) => {
         const pendingSlots = candidate.requestedSlots
-          .filter((slot) => !slot.isAssigned) // Only unassigned slots
+          .filter((slot) => !slot.isAssigned) 
           .map((slot) => {
             const { day, startTime, endTime } = slot;
-
-            // Find available interviewers for this slot
             const availableInterviewerNames = interviewers
               .filter((interviewer) => {
                 // Check if interviewer has availability on the requested day and time
@@ -163,7 +156,7 @@ const getPendingSlots= async (req,res)=>{
           pendingSlots,
         };
       })
-      .filter((entry) => entry.pendingSlots.length > 0); // Skip candidates with no pending slots
+      .filter((entry) => entry.pendingSlots.length > 0);
 
     res.status(200).json({
       success: true,

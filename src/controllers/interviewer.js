@@ -20,7 +20,6 @@ const interviewer = async (req, res) => {
       availability,
     });
 
-    // Save the interviewer to the database
     await newInterviewer.save();
 
     res.status(201).json({
@@ -34,7 +33,7 @@ const interviewer = async (req, res) => {
 const getInterviewerAvailability  = async (req, res) => {
   const { id } = req.params;
   try {
-    const query = id ? { _id: id } : {}; // If ID is provided, query specific interviewer
+    const query = id ? { _id: id } : {}; 
     const interviewers = await Interviewer.find(query);
 
     if (id && interviewers.length === 0) {
@@ -48,12 +47,10 @@ const getInterviewerAvailability  = async (req, res) => {
       const slot = interviewer.availability.map((availableSlot) => {
         const { day, startTime, endTime } = availableSlot;
 
-        // Generate free slots (1-hour intervals)
         const freeSlots = [];
         let currentTime = new Date(startTime);
         const endTimeLimit = new Date(endTime);
 
-        // Collect booked slots for the day
         const bookedSlots = interviewer.bookedSlots
           .filter((bookedSlot) => bookedSlot.day === day)
           .map((bookedSlot) => {
@@ -82,7 +79,6 @@ const getInterviewerAvailability  = async (req, res) => {
           currentTime = nextHour;
         }
 
-        // Format booked slots as readable strings
         const bookedSlotsFormatted = bookedSlots.map((booked) => {
           return `${booked.start.toLocaleTimeString("en-US", {
             hour: "numeric",
@@ -159,7 +155,6 @@ const assignInterviewerToCandidate = async (req, res) => {
 
     const { day, startTime, endTime } = requestedSlot;
 
-    // Validate that the interviewer exists
     const interviewer = await Interviewer.findById(interviewerId);
     if (!interviewer) {
       return res.status(404).json({
@@ -199,7 +194,6 @@ const assignInterviewerToCandidate = async (req, res) => {
       });
     }
     requestedSlot.isAssigned = true;
-    // Add the booked slot to the candidate's bookedSlots
     candidate.bookedSlot.push({
       interviewer: interviewerId,
       day,
@@ -245,7 +239,6 @@ const getBookedSlots=async (req,res)=>{
   try {
     let interviewers;
     if (id) {
-      // Find a specific interviewer by ID
       interviewers = await Interviewer.findById(id).populate('bookedSlots.candidate', 'name');
       if (!interviewers) {
         return res.status(404).json({
@@ -253,7 +246,7 @@ const getBookedSlots=async (req,res)=>{
           message: "Interviewer not found.",
         });
       }
-      interviewers = [interviewers]; // Wrap in an array for consistent processing
+      interviewers = [interviewers]; 
     } else {
       // Fetch all interviewers and populate candidate names
       interviewers = await Interviewer.find({}).populate('bookedSlots.candidate', 'name');
