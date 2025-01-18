@@ -15,6 +15,10 @@ const interviewer = async (req, res) => {
   }
   const { name, availability } = req.body;
   try {
+    const checkInterviewerExist=await Interviewer.findOne({name:name});
+    if (checkInterviewerExist) {
+      return res.status(400).json({ message: 'Interviewer name already exists' });
+    }
     const newInterviewer = new Interviewer({
       name,
       availability,
@@ -135,7 +139,7 @@ const assignInterviewerToCandidate = async (req, res) => {
         message: "Candidate not found.",
       });
     }
-    // Ensure the candidate has at least one requested slot
+    // checking the candidate has at least one requested slot
     if (!candidate.requestedSlots || candidate.requestedSlots.length === 0) {
       return res.status(400).json({
         success: false,
@@ -248,7 +252,7 @@ const getBookedSlots=async (req,res)=>{
       }
       interviewers = [interviewers]; 
     } else {
-      // Fetch all interviewers and populate candidate names
+      // Fetch all interviewers and candidate names
       interviewers = await Interviewer.find({}).populate('bookedSlots.candidate', 'name');
     }
 

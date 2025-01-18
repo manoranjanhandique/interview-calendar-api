@@ -3,7 +3,7 @@ const { interviewer, getInterviewerAvailability , assignInterviewerToCandidate, 
 const router=express.Router();
 
 router.post('/interviewers',interviewer);
-router.get('/interviewers/availability/:id?',getInterviewerAvailability ) //recheck***!
+router.get('/interviewers/availability/:id?',getInterviewerAvailability );
 router.post('/assign-interviewer',assignInterviewerToCandidate);
 router.get('/interview/booked-slots/:id?', getBookedSlots)
 
